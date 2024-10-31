@@ -1,0 +1,56 @@
+load("@aspect_bazel_lib//lib:tar.bzl", "tar")
+load("@rules_java//java:defs.bzl", "java_binary", "java_library", "java_test")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_load")
+
+java_binary(
+    name = "PingService",
+    srcs = [
+        "PingService.java",
+    ],
+)
+
+java_test(
+    name = "TestContainerExampleTest",
+    srcs = [
+        "TestContainerExampleTest.java",
+    ],
+    data = [
+        ":tarball.tar",
+    ],
+    env = {"TARBALL_RUNFILE": "$(rlocationpath :tarball.tar)"},
+    runtime_deps = [
+        "@maven//:org_slf4j_slf4j_simple",
+    ],
+    deps = [
+        "@bazel_tools//tools/java/runfiles",
+        "@maven//:org_testcontainers_testcontainers",
+    ],
+)
+
+tar(
+    name = "layer",
+    srcs = ["PingService_deploy.jar"],
+)
+
+oci_image(
+    name = "image",
+    base = "@distroless_java",
+    entrypoint = [
+        "java",
+        "-jar",
+        "/src/PingService_deploy.jar",
+    ],
+    tars = [":layer"],
+)
+
+oci_load(
+    name = "tarball",
+    image = ":image",
+    repo_tags = ["pingservice:latest"],
+)
+
+filegroup(
+    name = "tarball.tar",
+    srcs = [":tarball"],
+    output_group = "tarball",
+)

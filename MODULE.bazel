@@ -1,0 +1,28 @@
+bazel_dep(name = "rules_jvm_external", version = "6.5")
+bazel_dep(name = "rules_oci", version = "2.0.1")
+bazel_dep(name = "aspect_bazel_lib", version = "2.9.3")
+bazel_dep(name = "rules_java", version = "8.3.0")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+maven.install(
+    artifacts = [
+        "org.testcontainers:testcontainers:1.20.3",
+        "com.github.docker-java:docker-java:3.4.0",
+        "org.slf4j:slf4j-simple:2.0.16",
+    ],
+    lock_file = "//:maven_install.json",
+)
+use_repo(maven, "maven")
+
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+oci.pull(
+    name = "distroless_java",
+    digest = "sha256:d2d4515f1062fac83c307260a14b523fe6027d0ce22e3b77abfc8bef874b5497",
+    image = "gcr.io/distroless/java21-debian12",
+    platforms = [
+        "linux/amd64",
+        "linux/arm64/v8",
+        "linux/ppc64le",
+    ],
+)
+use_repo(oci, "distroless_java")
